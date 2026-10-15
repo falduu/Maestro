@@ -23,14 +23,8 @@ final class SpeechManager: ObservableObject {
     @Published private(set) var permissionState: PermissionState = .unknown
     @Published private(set) var errorMessage: String?
     @Published private(set) var parseDebug = ""
-    /// Ultimo comando riproduci eseguito: serve a «riprendi» per ripartire
-    /// dallo stesso brano/contesto senza ricominciare una nuova cronologia.
-    @Published private(set) var lastPlayCommand: TrackCommand?
 
     var onIntent: ((VoiceIntent) -> Void)?
-
-    /// Suggerimento contestuale per il riconoscitore (brano in riproduzione).
-    var musicNowPlayingHint: String?
 
     private var audioEngine: AVAudioEngine?
     private var recognizer: SFSpeechRecognizer?
@@ -49,8 +43,6 @@ final class SpeechManager: ObservableObject {
 
     private var lastPartialText = ""
     private var lastPartialSeen = Date.distantPast
-    /// Playlist estratta dal lessico durante l'ultimo parsing («nella playlist X»).
-    private var playlistOverride: String?
 
     // MARK: - Avvio / arresto
 
@@ -213,13 +205,10 @@ final class SpeechManager: ObservableObject {
         request.shouldReportPartialResults = true
         request.addsPunctuation = false
         request.taskHint = .search
-        // v0.3: contesto lessicale + brano in riproduzione/ultimo comando,
-        // così il riconoscitore "indovina" meglio le parole che userai davvero.
-        var contextual: [String] = [AppConfig.wakeWord]
-        contextual += IntentLexicon.allCommandWords
-        if let nowPlaying = musicNowPlayingHint { contextual.append(nowPlaying) }
-        if let last = lastPlayCommand { contextual.append(last.title) }
-        request.contextualStrings = Array(contextual.prefix(60))
+        request.contextualStrings = [
+            AppConfig.wakeWord, "riproduci", "play", "pausa",
+            "riprendi", "prossima", "precedente", "esci", "preferiti"
+        ]
 
         if AppConfig.preferOnDeviceRecognition, recognizer.supportsOnDeviceRecognition {
             request.requiresOnDeviceRecognition = true
@@ -263,18 +252,7 @@ final class SpeechManager: ObservableObject {
             }
         }
 
-        if let error {
-            let nsErr = error as NSError
-            let isNoSpeech = nsErr.domain == "kAFAssistantErrorDomain" && nsErr.code == 216
-
-            // 216 = nessun parlato rilevato: NON è un guasto. Riavvio immediato
-            // senza backoff (evita la finestra di silenzio in cui i comandi
-            // detti subito dopo non vengono captati).
-            if isNoSpeech {
-                scheduleRestart(delay: 0.05)
-                return
-            }
-
+        if error != nil {
             consecutiveErrors += 1
             if consecutiveErrors >= 3 {
                 setError("Riconoscimento instabile: nuovo tentativo con backoff.")
@@ -286,13 +264,9 @@ final class SpeechManager: ObservableObject {
     private func handleStablePartial(_ text: String) {
         let now = Date()
         if text == lastPartialText {
-            guard now.timeIntervalSince(lastPartialSeen) >= AppConfig.stablePartialTimeout else { return }
+            guard now.timeIntervalSince(lastPartialSeen) >= 1.0 else { return }
             lastPartialText = ""
-            // Ferma il task e usa il parziale come risultato definitivo:
-            // risposta più rapida rispetto all'attesa del «finale» nativo.
-            endCurrentRecognition()
             handleFinalTranscript(text, source: "parziale stabile")
-            scheduleRestart(delay: AppConfig.restartBaseDelay)
         } else {
             lastPartialText = text
             lastPartialSeen = now
@@ -321,7 +295,7 @@ final class SpeechManager: ObservableObject {
         lastTranscript = text
     }
 
-    // MARK: - Dispatch del comando riconosciuto
+    // MARK: - Parsing intenti v2
 
     private func handleFinalTranscript(_ transcript: String, source: String) {
         let intent = extractIntent(from: transcript)
@@ -340,11 +314,6 @@ final class SpeechManager: ObservableObject {
         lastTriggeredKey = key
         lastTriggeredDate = now
 
-        // Ricorda l'ultimo «riproduci»: serve per riprendere lo stesso contesto.
-        if case .play(let command) = intent {
-            lastPlayCommand = command
-        }
-
         let label = intentDescription(intent)
         lastCommand = label
         setStatus("Comando: \(label)")
@@ -354,21 +323,15 @@ final class SpeechManager: ObservableObject {
 
     private func intentKey(_ intent: VoiceIntent) -> String {
         switch intent {
-        case .play(let c):
-            return "play::\(c.scope.rawValue)::\(c.playlistName ?? "")::\(c.title)"
-        default:
-            return "\(intent)"
+        case .play(let c): return "play::\(c.scope.rawValue)::\(c.title)"
+        default: return "\(intent)"
         }
     }
 
     private func intentDescription(_ intent: VoiceIntent) -> String {
         switch intent {
         case .play(let c):
-            switch c.scope {
-            case .favorites: return "\(c.title) [Preferiti]"
-            case .playlist:  return "\(c.title) [Playlist: \(c.playlistName ?? "?")]"
-            case .allLibrary: return c.title
-            }
+            return c.scope == .favorites ? "\(c.title) [Preferiti]" : c.title
         case .pause: return "pausa"
         case .resume: return "riprendi"
         case .next: return "prossima"
@@ -378,15 +341,14 @@ final class SpeechManager: ObservableObject {
         }
     }
 
-    // MARK: - Parsing intenti v3 (lessico IntentLexicon)
-
     private func extractIntent(from transcript: String) -> VoiceIntent {
-        let tokens = TextNormalizer.tokenize(transcript)
+        let tokens = normalizeText(transcript).split(separator: " ").map(String.init)
         guard !tokens.isEmpty else { return .none }
 
+        let aliases = [AppConfig.wakeWord] + AppConfig.wakeWordAliases
         var wakeEnd: Int? = nil
-        for alias in [AppConfig.wakeWord] + AppConfig.wakeWordAliases + IntentLexicon.wakeWordAliases {
-            let aliasTokens = TextNormalizer.tokenize(alias)
+        for alias in aliases {
+            let aliasTokens = normalizeText(alias).split(separator: " ").map(String.init)
             if let end = findSequence(aliasTokens, in: tokens) {
                 wakeEnd = end
                 break
@@ -401,29 +363,18 @@ final class SpeechManager: ObservableObject {
             searchStart = end
         }
 
-        playlistOverride = nil
         var index = searchStart
         while index < tokens.count {
-            // Salta prefissi di cortesia («maestro per favore riproduci…»)
-            if let skipped = matchPoliteness(at: index, tokens: tokens) {
-                index += skipped
-                continue
-            }
-
             // 1) Frasi di trasporto/uscita (le più lunghe vincono)
-            if let (intent, _) = matchTransportPhrase(at: index, tokens: tokens) {
+            if let (intent, _) = matchPhrase(at: index, tokens: tokens) {
                 return intent
             }
 
             // 2) Verbi di riproduzione, con titolo dopo
             if let len = matchPlayVerb(at: index, tokens: tokens) {
                 let cleaned = cleanTitleTokens(Array(tokens[(index + len)...]))
-                if cleaned.title.isEmpty && playlistOverride == nil { return .resume }
-                var command = TrackCommand(title: cleaned.title, scope: cleaned.scope)
-                if let pl = playlistOverride {
-                    command = TrackCommand(title: cleaned.title, scope: .playlist, playlistName: pl)
-                }
-                return .play(command)
+                if cleaned.title.isEmpty { return .resume }
+                return .play(TrackCommand(title: cleaned.title, scope: cleaned.scope))
             }
 
             index += 1
@@ -432,60 +383,53 @@ final class SpeechManager: ObservableObject {
         return .none
     }
 
-    private func matchPoliteness(at index: Int, tokens: [String]) -> Int? {
-        for phrase in Self.politenessSorted {
-            if matches(phrase, at: index, in: tokens) { return phrase.count }
-        }
-        return nil
-    }
+    private static let phraseIntents: [([String], VoiceIntent)] = [
+        (["metti", "in", "pausa"], .pause),
+        (["vai", "in", "pausa"], .pause),
+        (["riprendi", "la", "riproduzione"], .resume),
+        (["prossimo", "brano"], .next),
+        (["prossima", "canzone"], .next),
+        (["brano", "precedente"], .previous),
+        (["torna", "indietro"], .previous),
+        (["pausa"], .pause),
+        (["stop"], .pause),
+        (["riprendi"], .resume),
+        (["continua"], .resume),
+        (["resume"], .resume),
+        (["prossima"], .next),
+        (["successiva"], .next),
+        (["next"], .next),
+        (["precedente"], .previous),
+        (["previous"], .previous),
+        (["esci"], .quit),
+        (["quit"], .quit),
+        (["exit"], .quit),
+        (["chiuditi"], .quit),
+        (["chiudi"], .quit),
+        (["spegniti"], .quit)
+    ]
 
-    /// Frasi del lessico pre-ordinate dalla più lunga alla più corta:
-    /// così «prossimo brano» vince sempre su «prossimo».
-    private static let transportPhrases: [([String], VoiceIntent)] = {
-        var all: [([String], VoiceIntent)] = []
-        all += IntentLexicon.pausePhrases.map { ($0, .pause) }
-        all += IntentLexicon.resumePhrases.map { ($0, .resume) }
-        all += IntentLexicon.nextPhrases.map { ($0, .next) }
-        all += IntentLexicon.previousPhrases.map { ($0, .previous) }
-        all += IntentLexicon.quitPhrases.map { ($0, .quit) }
-        return all.sorted { $0.0.count > $1.0.count }
-    }()
-
-    private static let politenessSorted: [[String]] =
-        IntentLexicon.politenessPrefixes.sorted { $0.count > $1.count }
-
-    private static let playVerbsSorted: [[String]] =
-        IntentLexicon.playVerbs.sorted { $0.count > $1.count }
-
-    private static let favoritesSuffixesSorted: [[String]] =
-        IntentLexicon.favoritesPhrases.filter { !$0.contains("*") }.sorted { $0.count > $1.count }
-
-    private static let favoritesPrefixesSorted: [[String]] =
-        IntentLexicon.favoritesPhrases.filter { $0.last == "*" }.sorted { $0.count > $1.count }
-
-    private static let playlistMarkersSorted: [[String]] =
-        IntentLexicon.playlistMarkers.sorted { $0.count > $1.count }
-
-    private static let titleFillersSorted: [[String]] =
-        IntentLexicon.titleFillerStarts.sorted { $0.count > $1.count }
-
-    private func matchTransportPhrase(at index: Int, tokens: [String]) -> (VoiceIntent, Int)? {
-        for (phrase, intent) in Self.transportPhrases {
-            if matches(phrase, at: index, in: tokens) {
+    private func matchPhrase(at index: Int, tokens: [String]) -> (VoiceIntent, Int)? {
+        for (phrase, intent) in Self.phraseIntents {
+            if index + phrase.count <= tokens.count,
+               Array(tokens[index..<index + phrase.count]) == phrase {
                 return (intent, phrase.count)
             }
         }
         return nil
     }
 
-    private func matches(_ phrase: [String], at index: Int, in tokens: [String]) -> Bool {
-        guard !phrase.isEmpty, index + phrase.count <= tokens.count else { return false }
-        return Array(tokens[index..<index + phrase.count]) == phrase
-    }
+    private static let playVerbs: [[String]] = [
+        ["fai", "partire"], ["fai", "riprodurre"], ["metti", "su"],
+        ["riproduci"], ["play"], ["suona"], ["metti"], ["ascolta"], ["avvia"], ["esegui"]
+    ]
 
     private func matchPlayVerb(at index: Int, tokens: [String]) -> Int? {
-        for verb in Self.playVerbsSorted {
-            if matches(verb, at: index, in: tokens) { return verb.count }
+        for verb in Self.playVerbs {
+            if index + verb.count <= tokens.count,
+               Array(tokens[index..<index + verb.count]) == verb {
+                return verb.count
+            }
         }
         return nil
     }
@@ -494,37 +438,40 @@ final class SpeechManager: ObservableObject {
         var titleTokens = input
         var scope: MusicSearchScope = .allLibrary
 
-        // Scope "preferiti": suffisso («… nei miei preferiti») o prefisso
-        // («nei preferiti …»).
-        for phrase in Self.favoritesSuffixesSorted {
-            if titleTokens.count >= phrase.count,
-               Array(titleTokens.suffix(phrase.count)) == phrase {
-                titleTokens.removeLast(phrase.count)
+        let favoriteSuffixes: [[String]] = [
+            ["che", "trovi", "nei", "miei", "brani", "preferiti"],
+            ["che", "trovi", "tra", "i", "miei", "brani", "preferiti"],
+            ["che", "trovi", "nei", "miei", "preferiti"],
+            ["che", "trovi", "tra", "i", "miei", "preferiti"],
+            ["che", "trovi", "nei", "preferiti"],
+            ["che", "trovi", "tra", "i", "preferiti"],
+            ["che", "trovi", "dai", "miei", "preferiti"],
+            ["che", "trovi", "in", "my", "favorites"],
+            ["che", "trovi", "from", "favorites"],
+            ["nei", "miei", "brani", "preferiti"],
+            ["tra", "i", "miei", "brani", "preferiti"],
+            ["nei", "miei", "preferiti"],
+            ["tra", "i", "miei", "preferiti"],
+            ["dai", "miei", "preferiti"],
+            ["nei", "brani", "preferiti"],
+            ["tra", "i", "preferiti"],
+            ["nei", "preferiti"],
+            ["in", "my", "favorites"],
+            ["from", "favorites"],
+            ["in", "favorites"],
+            ["preferiti"],
+            ["favoriti"],
+            ["favorites"],
+            ["favorite"],
+            ["liked"]
+        ]
+
+        for suffix in favoriteSuffixes.sorted(by: { $0.count > $1.count }) {
+            if titleTokens.count >= suffix.count,
+               Array(titleTokens.suffix(suffix.count)) == suffix {
+                titleTokens.removeLast(suffix.count)
                 scope = .favorites
                 break
-            }
-        }
-
-        if scope == .allLibrary {
-            for phrase in Self.favoritesPrefixesSorted where matches(Array(phrase.dropLast()), at: 0, in: titleTokens) {
-                titleTokens.removeFirst(phrase.count - 1)
-                scope = .favorites
-                break
-            }
-        }
-
-        // Playlist esplicita: «<titolo> nella playlist <nome>».
-        outer: for marker in Self.playlistMarkersSorted {
-            guard titleTokens.count > marker.count else { continue }
-            for start in 0...(titleTokens.count - marker.count) {
-                if matches(marker, at: start, in: titleTokens) {
-                    let nameTokens = Array(titleTokens[(start + marker.count)...])
-                    titleTokens = Array(titleTokens[0..<start])
-                    if !nameTokens.isEmpty {
-                        playlistOverride = nameTokens.joined(separator: " ")
-                    }
-                    break outer
-                }
             }
         }
 
@@ -533,13 +480,25 @@ final class SpeechManager: ObservableObject {
             titleTokens.removeLast(2)
         }
 
-        for filler in Self.titleFillersSorted where matches(filler, at: 0, in: titleTokens) {
+        let fillerStarts: [[String]] = [
+            ["il", "brano"], ["la", "canzone"], ["lo", "brano"],
+            ["un", "brano"], ["una", "canzone"],
+            ["brano"], ["canzone"], ["song"], ["track"], ["musica"]
+        ]
+
+        for filler in fillerStarts where titleTokens.starts(with: filler) {
             titleTokens.removeFirst(filler.count)
             break
         }
 
-        while let last = titleTokens.last,
-              IntentLexicon.titleTrailingStopwords.contains(last) {
+        let trailingStopWords: Set<String> = [
+            "per", "favore", "please", "ora", "adesso", "now",
+            "grazie", "thanks", "ehi", "hey",
+            "brano", "canzone", "traccia", "song", "track",
+            "trovi", "nei", "tra", "dai", "nella", "nel"
+        ]
+
+        while let last = titleTokens.last, trailingStopWords.contains(last) {
             titleTokens.removeLast()
         }
 
@@ -548,7 +507,17 @@ final class SpeechManager: ObservableObject {
     }
 
     private func normalizeText(_ text: String) -> String {
-        TextNormalizer.normalize(text)
+        let folded = text
+            .lowercased()
+            .folding(options: [.diacriticInsensitive, .widthInsensitive], locale: Locale.current)
+
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet.whitespaces)
+
+        return folded
+            .components(separatedBy: allowed.inverted)
+            .joined(separator: " ")
+            .split(separator: " ")
+            .joined(separator: " ")
     }
 
     private func findSequence(_ sequence: [String], in tokens: [String]) -> Int? {

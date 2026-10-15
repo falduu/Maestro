@@ -18,20 +18,15 @@ final class MusicAppController: Sendable {
     }
 
     func play(query: String, preferredTitle: String?, inPlaylist playlistName: String?) async -> PlayResult {
-        // v0.3: script compilato una sola volta e riusato dalla cache
-        // (fa a tempo ~50-200ms di compilazione AppleScript per comando).
-        let key = ScriptCache.key(query: query, preferred: preferredTitle ?? "", playlist: playlistName ?? "")
-
         await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
-                guard let script = ScriptCache.shared.script(for: key, source: {
-                    Self.makeScript(query: query, preferredTitle: preferredTitle, playlistName: playlistName)
-                }) else {
+                let source = Self.makeScript(query: query, preferredTitle: preferredTitle, playlistName: playlistName)
+
+                var error: NSDictionary?
+                guard let script = NSAppleScript(source: source) else {
                     continuation.resume(returning: .error("Impossibile preparare lo script AppleScript."))
                     return
                 }
-
-                var error: NSDictionary?
 
                 let descriptor = script.executeAndReturnError(&error)
 
@@ -107,36 +102,6 @@ final class MusicAppController: Sendable {
         }
     }
 
-    // MARK: - Stato del player
-
-    /// Nome del brano attualmente caricato nel player (vuoto se nessun brano).
-    /// Usato dal "resume intelligente" per non spezzare la cronologia.
-    func currentTrackName() async -> String? {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let source = """
-                tell application "Music"
-                    if player plan is not equal to no such track then
-                        return name of current track
-                    end if
-                    return ""
-                end tell
-                """
-                guard let script = NSAppleScript(source: source) else {
-                    continuation.resume(returning: nil)
-                    return
-                }
-                var error: NSDictionary?
-                let result = script.executeAndReturnError(&error)
-                if error != nil {
-                    continuation.resume(returning: nil)
-                } else {
-                    continuation.resume(returning: result.stringValue ?? "")
-                }
-            }
-        }
-    }
-
     // MARK: - Generazione script
 
     private static func makeScript(query: String, preferredTitle: String?, playlistName: String?) -> String {
@@ -179,12 +144,7 @@ final class MusicAppController: Sendable {
 
             set t to item 1 of cands
             play t
-            set n to 0
-            repeat while n < 12
-                if player state is playing then exit repeat
-                delay 0.15
-                set n to n + 1
-            end repeat
+            delay 0.4
             if player state is not playing then return "PLAYFAILED|" & (name of t)
             return name of t
         end tell
@@ -194,38 +154,5 @@ final class MusicAppController: Sendable {
     private static func escape(_ s: String) -> String {
         s.replacingOccurrences(of: "\\", with: "\\\\")
          .replacingOccurrences(of: "\"", with: "\\\"")
-    }
-}
-
-// MARK: - Cache script compilati
-
-/// NSAppleScript la compilazione è lenta (~50-200ms): con una query che si
-/// ripete (tipico dei comandi vocali) riusiamo lo script già compilato.
-final class ScriptCache: @unchecked Sendable {
-    static let shared = ScriptCache()
-
-    private var cache: [String: NSAppleScript] = [:]
-    private let lock = NSLock()
-    private let maxEntries = 40
-
-    static func key(query: String, preferred: String, playlist: String) -> String {
-        "\(playlist)::\(preferred)::\(query)"
-    }
-
-    func script(for key: String, source: () -> String) -> NSAppleScript? {
-        lock.lock()
-        if let cached = cache[key] {
-            lock.unlock()
-            return cached
-        }
-        lock.unlock()
-
-        guard let script = NSAppleScript(source: source()) else { return nil }
-
-        lock.lock()
-        if cache.count >= maxEntries { cache.removeAll(keepingCapacity: true) }
-        cache[key] = script
-        lock.unlock()
-        return script
     }
 }

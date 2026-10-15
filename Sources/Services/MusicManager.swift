@@ -52,28 +52,6 @@ final class MusicManager: ObservableObject {
         await play(command: TrackCommand(title: rawQuery, scope: .allLibrary))
     }
 
-    /// v0.3 "resume intelligente": se la pausa era nostra, ripartiamo dallo
-    /// STESSO brano (player.playpause()) invece di riavviare una nuova
-    /// riproduzione che spezzerebbe la cronologia/queue di Musica.
-    func resumeOrReplay(lastCommand: TrackCommand?) async {
-        let current = await controller.currentTrackName()
-
-        if let current, !current.isEmpty {
-            // C'è già un brano caricato nel player: semplice play/pause.
-            await transport(.resume)
-            state = .success("Ripresa «\(current)»: cronologia continua.")
-            return
-        }
-
-        if let lastCommand {
-            // Player scarico (Musica chiusa / crash): riavvia lo stesso brano.
-            await play(command: lastCommand)
-            return
-        }
-
-        await transport(.resume)
-    }
-
     func play(command: TrackCommand) async {
         let query = command.title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {
@@ -108,13 +86,6 @@ final class MusicManager: ObservableObject {
                 if candidates.isEmpty && AppConfig.fallbackToLibraryIfFavoritesEmpty {
                     candidates = try await searchLibrary(for: query)
                 }
-
-            case .playlist:
-                playlistName = command.playlistName
-                candidates = try await searchInPlaylist(named: command.playlistName ?? "", query: query)
-                if candidates.isEmpty {
-                    candidates = try await searchLibrary(for: query)
-                }
             }
 
             let best = chooseBest(from: candidates, matching: query)
@@ -130,7 +101,11 @@ final class MusicManager: ObservableObject {
             switch result {
             case .played(let name):
                 lastPlayedTitle = name
-                state = .success(successMessage(for: command, track: name))
+                state = .success(
+                    command.scope == .favorites
+                        ? "Dai preferiti: \(name)"
+                        : "In riproduzione: \(name)"
+                )
             case .notFound:
                 state = .failure("Nessun brano in libreria per \"\(query)\".")
             case .playFailed(let name):
@@ -146,7 +121,7 @@ final class MusicManager: ObservableObject {
             switch result {
             case .played(let name):
                 lastPlayedTitle = name
-                state = .success(successMessage(for: command, track: name))
+                state = .success("In riproduzione: \(name)")
             case .notFound:
                 state = .failure("Nessun brano in libreria per \"\(query)\".")
             case .playFailed(let name):
@@ -157,30 +132,7 @@ final class MusicManager: ObservableObject {
         }
     }
 
-    private func successMessage(for command: TrackCommand, track: String) -> String {
-        switch command.scope {
-        case .favorites: return "Dai preferiti: \(track)"
-        case .playlist:  return "Da \(command.playlistName ?? "?"): \(track)"
-        case .allLibrary: return "In riproduzione: \(track)"
-        }
-    }
-
     // MARK: - Ricerca
-
-    private func searchInPlaylist(named name: String, query: String) async throws -> [TrackCandidate] {
-        let request = MusicLibrarySearchRequest(term: name, types: [Playlist.self])
-        let playlists = try await request.response().playlists
-        guard let playlist = playlists.first(where: {
-            Self.normalized($0.name) == Self.normalized(name)
-        }) ?? playlists.first else { return [] }
-
-        guard let tracks = try? await playlist.with(.tracks).tracks else { return [] }
-        let q = Self.normalized(query)
-        return tracks.filter {
-            Self.normalized($0.title).contains(q) ||
-            Self.normalized("\($0.title) \($0.artistName)").contains(q)
-        }.map { TrackCandidate(title: $0.title, artistName: $0.artistName) }
-    }
 
     private func searchLibrary(for query: String) async throws -> [TrackCandidate] {
         let request = MusicLibrarySearchRequest(term: query, types: [Song.self])
