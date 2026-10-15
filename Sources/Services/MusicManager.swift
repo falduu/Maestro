@@ -93,6 +93,23 @@ final class MusicManager: ObservableObject {
         var playlistName: String? = nil
 
         do {
+            if command.scope == .favorites {
+                _ = try await favoritePlaylists()
+                playlistName = favoritePlaylistName
+            } else if command.scope == .playlist {
+                playlistName = command.playlistName
+            }
+
+            // Try Musica first so a local match does not wait for MusicKit.
+            if command.scope != .favorites || playlistName != nil {
+                let immediate = await controller.play(
+                    query: query,
+                    preferredTitle: nil,
+                    inPlaylist: playlistName
+                )
+                if handlePlaybackResult(immediate, command: command) { return }
+            }
+
             var candidates: [TrackCandidate] = []
 
             switch command.scope {
@@ -104,13 +121,11 @@ final class MusicManager: ObservableObject {
 
             case .favorites:
                 candidates = try await searchFavorites(for: query)
-                playlistName = favoritePlaylistName
                 if candidates.isEmpty && AppConfig.fallbackToLibraryIfFavoritesEmpty {
                     candidates = try await searchLibrary(for: query)
                 }
 
             case .playlist:
-                playlistName = command.playlistName
                 candidates = try await searchInPlaylist(named: command.playlistName ?? "", query: query)
                 if candidates.isEmpty {
                     candidates = try await searchLibrary(for: query)
@@ -127,33 +142,37 @@ final class MusicManager: ObservableObject {
                 inPlaylist: playlistName
             )
 
-            switch result {
-            case .played(let name):
-                lastPlayedTitle = name
-                state = .success(successMessage(for: command, track: name))
-            case .notFound:
+            if !handlePlaybackResult(result, command: command) {
                 state = .failure("Nessun brano in libreria per \"\(query)\".")
-            case .playFailed(let name):
-                state = .failure("Musica non ha avviato \"\(name)\": file mancante o brano non scaricato?")
-            case .error(let message):
-                state = .failure(message)
             }
 
         } catch {
             // MusicKit KO: proviamo comunque la ricerca diretta dentro Musica.app.
             let result = await controller.play(query: query, preferredTitle: nil, inPlaylist: playlistName)
 
-            switch result {
-            case .played(let name):
-                lastPlayedTitle = name
-                state = .success(successMessage(for: command, track: name))
-            case .notFound:
+            if !handlePlaybackResult(result, command: command) {
                 state = .failure("Nessun brano in libreria per \"\(query)\".")
-            case .playFailed(let name):
-                state = .failure("Musica non ha avviato \"\(name)\".")
-            case .error(let message):
-                state = .failure(message)
             }
+        }
+    }
+
+    private func handlePlaybackResult(
+        _ result: MusicAppController.PlayResult,
+        command: TrackCommand
+    ) -> Bool {
+        switch result {
+        case .played(let name):
+            lastPlayedTitle = name
+            state = .success(successMessage(for: command, track: name))
+            return true
+        case .notFound:
+            return false
+        case .playFailed(let name):
+            state = .failure("Musica non ha avviato \"\(name)\": file mancante o brano non scaricato?")
+            return true
+        case .error(let message):
+            state = .failure(message)
+            return true
         }
     }
 

@@ -66,7 +66,7 @@ final class AppCoordinator: ObservableObject {
         case .pause:
             await music.transport(.pause)
         case .resume:
-            await music.transport(.resume)
+            await music.resumeOrReplay(lastCommand: speech.lastPlayCommand)
         case .next:
             await music.transport(.next)
         case .previous:

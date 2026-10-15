@@ -22,7 +22,7 @@ final class MusicAppController: Sendable {
         // (fa a tempo ~50-200ms di compilazione AppleScript per comando).
         let key = ScriptCache.key(query: query, preferred: preferredTitle ?? "", playlist: playlistName ?? "")
 
-        await withCheckedContinuation { (continuation: CheckedContinuation<PlayResult, Never>) in
+        return await withCheckedContinuation { (continuation: CheckedContinuation<PlayResult, Never>) in
             DispatchQueue.global(qos: .userInitiated).async {
                 guard let script = ScriptCache.shared.script(for: key, source: {
                     Self.makeScript(query: query, preferredTitle: preferredTitle, playlistName: playlistName)
@@ -37,9 +37,13 @@ final class MusicAppController: Sendable {
 
                 if let error {
                     let code = error[NSAppleScript.errorNumber] as? Int ?? 0
-                    if code == -1743 || code == -600 {
+                    if code == -1743 {
                         continuation.resume(returning: .error(
                             "Permesso Automazione negato: abilitalo in Impostazioni di Sistema → Privacy e Sicurezza → Automazione → Maestro → Musica."
+                        ))
+                    } else if code == -600 {
+                        continuation.resume(returning: .error(
+                            "Impossibile avviare Musica.app. Verifica che sia installata e riprova."
                         ))
                     } else {
                         let message = error[NSAppleScript.errorMessage] as? String ?? "errore sconosciuto"
@@ -79,7 +83,7 @@ final class MusicAppController: Sendable {
                 case .previous: command = "previous track"
                 }
 
-                let source = "tell application \"Music\"\n\(command)\nreturn \"OK\"\nend tell"
+                let source = "tell application \"Music\"\nlaunch\n\(command)\nreturn \"OK\"\nend tell"
 
                 var error: NSDictionary?
                 guard let script = NSAppleScript(source: source) else {
@@ -91,9 +95,13 @@ final class MusicAppController: Sendable {
 
                 if let error {
                     let code = error[NSAppleScript.errorNumber] as? Int ?? 0
-                    if code == -1743 || code == -600 {
+                    if code == -1743 {
                         continuation.resume(returning: .error(
                             "Permesso Automazione negato: abilitalo in Impostazioni di Sistema → Privacy e Sicurezza → Automazione."
+                        ))
+                    } else if code == -600 {
+                        continuation.resume(returning: .error(
+                            "Impossibile avviare Musica.app. Verifica che sia installata e riprova."
                         ))
                     } else {
                         let message = error[NSAppleScript.errorMessage] as? String ?? "errore sconosciuto"
@@ -116,10 +124,12 @@ final class MusicAppController: Sendable {
             DispatchQueue.global(qos: .userInitiated).async {
                 let source = """
                 tell application "Music"
-                    if player plan is not equal to no such track then
+                    launch
+                    try
                         return name of current track
-                    end if
-                    return ""
+                    on error
+                        return ""
+                    end try
                 end tell
                 """
                 guard let script = NSAppleScript(source: source) else {
@@ -146,6 +156,7 @@ final class MusicAppController: Sendable {
 
         return """
         tell application "Music"
+            launch
             set cont to missing value
             if "\(plist)" is not "" then
                 try
@@ -163,6 +174,11 @@ final class MusicAppController: Sendable {
             if (count of cands) is 0 and "\(pref)" is not "" then
                 try
                     set cands to (every track of cont whose name contains "\(pref)")
+                end try
+            end if
+            if (count of cands) is 0 then
+                try
+                    set cands to (every track of cont whose name is "\(q)")
                 end try
             end if
             if (count of cands) is 0 then

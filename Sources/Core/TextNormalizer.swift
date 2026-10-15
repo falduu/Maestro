@@ -12,7 +12,7 @@ enum TextNormalizer {
 
     /// Stringa normalizzata (single space, senza punteggiatura/accenti).
     static func normalize(_ text: String) -> String {
-        var working = text.lowercased()
+        var working = " \(text.lowercased()) "
 
         // Correzioni multi-token del lessico (es. «ma estro» → «maestro»).
         for (wrong, right) in IntentLexicon.phraseCorrections where wrong.contains(" ") {

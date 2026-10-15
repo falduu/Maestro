@@ -1,0 +1,347 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		121BAEC8C2E931545A6E1571 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53D3D4DAE5CF13A95D2AF01F /* MenuBarView.swift */; };
+		733D74D6D03491065CD07EEC /* SpeechManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACC5F65D0EF452FE23A9036A /* SpeechManager.swift */; };
+		73FCE239BF4DA2F920F52E9A /* MusicManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11A62C87BF023756979868B6 /* MusicManager.swift */; };
+		8375A0DD7457772A83BC9969 /* MaestroApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C0FFFF62C36D0E498B895A1 /* MaestroApp.swift */; };
+		B046F3F3D9F6BAD22E3B7CD6 /* TrackCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B614047EF314F90ED6DE3F4 /* TrackCommand.swift */; };
+		D1D8D3B99A92301A03BEC940 /* MenuBarLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D97C8537913F20ADC43FF4 /* MenuBarLabel.swift */; };
+		FB2DF2263EFC081982243E6D /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A5F9F80F68DB4FC674312B4 /* AppConfig.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		11A62C87BF023756979868B6 /* MusicManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicManager.swift; sourceTree = "<group>"; };
+		2C0FFFF62C36D0E498B895A1 /* MaestroApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaestroApp.swift; sourceTree = "<group>"; };
+		3A5F9F80F68DB4FC674312B4 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		4B614047EF314F90ED6DE3F4 /* TrackCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackCommand.swift; sourceTree = "<group>"; };
+		53D3D4DAE5CF13A95D2AF01F /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		5D89E2FA8A82D88218732BE6 /* Maestro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Maestro.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		68D97C8537913F20ADC43FF4 /* MenuBarLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarLabel.swift; sourceTree = "<group>"; };
+		ACC5F65D0EF452FE23A9036A /* SpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechManager.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		1E7EFBC7692BDBFB96F4AF35 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				8EE359E024FCC63ED59919D8 /* App */,
+				B5D4D6CFB9439C6F51E1B3BB /* Core */,
+				B871A6D597C91C86003420C5 /* Services */,
+				EA9E716999CD5499005455CA /* UI */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		6FBBD558C470D01D87456D2C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5D89E2FA8A82D88218732BE6 /* Maestro.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		75313B8D2872F4347710E9B6 = {
+			isa = PBXGroup;
+			children = (
+				1E7EFBC7692BDBFB96F4AF35 /* Sources */,
+				6FBBD558C470D01D87456D2C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		8EE359E024FCC63ED59919D8 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				2C0FFFF62C36D0E498B895A1 /* MaestroApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		B5D4D6CFB9439C6F51E1B3BB /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				3A5F9F80F68DB4FC674312B4 /* AppConfig.swift */,
+				4B614047EF314F90ED6DE3F4 /* TrackCommand.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		B871A6D597C91C86003420C5 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				11A62C87BF023756979868B6 /* MusicManager.swift */,
+				ACC5F65D0EF452FE23A9036A /* SpeechManager.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		EA9E716999CD5499005455CA /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				68D97C8537913F20ADC43FF4 /* MenuBarLabel.swift */,
+				53D3D4DAE5CF13A95D2AF01F /* MenuBarView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		18D8774E114076BC54C5F2DF /* Maestro */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 095129749B5EB1F38DB4A090 /* Build configuration list for PBXNativeTarget "Maestro" */;
+			buildPhases = (
+				D0BBD679BD76D09FDE4CD0C0 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Maestro;
+			packageProductDependencies = (
+			);
+			productName = Maestro;
+			productReference = 5D89E2FA8A82D88218732BE6 /* Maestro.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		947BF46DA442257C7E34EAAB /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					18D8774E114076BC54C5F2DF = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 9DD24BAA2C74F6B45661D816 /* Build configuration list for PBXProject "Maestro" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 75313B8D2872F4347710E9B6;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 6FBBD558C470D01D87456D2C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				18D8774E114076BC54C5F2DF /* Maestro */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D0BBD679BD76D09FDE4CD0C0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FB2DF2263EFC081982243E6D /* AppConfig.swift in Sources */,
+				8375A0DD7457772A83BC9969 /* MaestroApp.swift in Sources */,
+				D1D8D3B99A92301A03BEC940 /* MenuBarLabel.swift in Sources */,
+				121BAEC8C2E931545A6E1571 /* MenuBarView.swift in Sources */,
+				73FCE239BF4DA2F920F52E9A /* MusicManager.swift in Sources */,
+				733D74D6D03491065CD07EEC /* SpeechManager.swift in Sources */,
+				B046F3F3D9F6BAD22E3B7CD6 /* TrackCommand.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		162CC723B75A1E9F82DE695A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.francescofalduto.maestro;
+				PRODUCT_NAME = Maestro;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		6359B2DE2A48ADD85329BE4E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		AA7A36D1310F1E07F11F67CE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.francescofalduto.maestro;
+				PRODUCT_NAME = Maestro;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		BF595D840419FA1A6BA2BCE1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		095129749B5EB1F38DB4A090 /* Build configuration list for PBXNativeTarget "Maestro" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				162CC723B75A1E9F82DE695A /* Debug */,
+				AA7A36D1310F1E07F11F67CE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9DD24BAA2C74F6B45661D816 /* Build configuration list for PBXProject "Maestro" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF595D840419FA1A6BA2BCE1 /* Debug */,
+				6359B2DE2A48ADD85329BE4E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 947BF46DA442257C7E34EAAB /* Project object */;
+}

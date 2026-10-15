@@ -34,8 +34,14 @@ enum IntentLexicon {
         // italiano
         ["riproduci"], ["riprodurre"], ["riproducimi"], ["suona"], ["suonami"],
         ["metti"], ["metterei"], ["messi"], ["mettimi"], ["metti su"],
-        ["fai partire"], ["fammi partire"], ["fa partire"], ["fai riprodurre"],
-        ["fammi sentire"], ["fai sentire"], ["ascolta"], ["ascoltiamo"],
+        ["riproduci il brano"], ["riproduci la canzone"], ["riproduci il pezzo"],
+        ["suona la canzone"], ["metti la canzone"], ["metti su la canzone"],
+        ["fammi riprodurre"], ["puoi riprodurre"], ["vorrei ascoltare"],
+        ["voglio ascoltare"], ["cerca e riproduci"], ["fammi partire"],
+        ["fai partire"], ["fa partire"], ["fai riprodurre"],
+        ["fammi sentire"], ["fai sentire"], ["fammi ascoltare"], ["fai ascoltare"],
+        ["metti a suonare"], ["metti in riproduzione"], ["manda in onda"],
+        ["ascolta"], ["ascoltiamo"],
         ["avvia"], ["avviaci"], ["esegui"], ["executivi"], ["partire con"],
         ["dammi"], ["vorrei"], ["voglio"], ["vuoi"], ["possiamo"],
         ["accendi"], ["carica"], ["cerca"], ["trova"], ["giochiamo con"],
@@ -102,6 +108,8 @@ enum IntentLexicon {
     // MARK: - Trasporto: pausa
 
     static let pausePhrases: [[String]] = [
+        ["metti la musica in pausa"], ["metti il brano in pausa"],
+        ["sospendi la musica"], ["arresta la musica"], ["silenzia la musica"],
         ["metti in pausa"], ["vai in pausa"], ["mettiamoci in pausa"],
         ["pausa"], [" pausa"], ["stai in pausa"], ["blocca"], ["blocca la musica"],
         ["blocca la riproduzione"], ["ferma"], ["ferma la musica"],
@@ -114,9 +122,14 @@ enum IntentLexicon {
     // MARK: - Trasporto: ripresa
 
     static let resumePhrases: [[String]] = [
-        ["riprendi la riproduzione"], ["riprendi la musica"], ["riprendi"],
-        ["riprendi"], ["ripristina"], ["continua"], ["continua la musica"],
-        ["continua la riproduzione"], ["manda avanti"], ["rimetti"],
+        ["riprendi la canzone"], ["riprendi il brano"],
+        ["continua da dove avevo interrotto"], ["riparti da dove eri rimasto"],
+        ["riattiva la musica"], ["togli il mute"],
+        ["riprendi la riproduzione"], ["riprendi la musica"], ["riprendi da dove eri rimasto"],
+        ["riprendi da dove ho lasciato"], ["riprendi"], ["ripristina"],
+        ["continua da dove eri rimasto"], ["continua la riproduzione"],
+        ["continua la musica"], ["continua"], ["fai ripartire"], ["riparti"],
+        ["manda avanti"], ["rimetti"],
         ["rimetti su"], ["rimetti la musica"], ["riavvia"], ["riavvia la musica"],
         ["return"], ["resume"], ["keep playing"], ["go on"], ["carry on"],
         ["unpause"], ["togli la pausa"], ["leva la pausa"], ["via la pausa"]
@@ -125,11 +138,14 @@ enum IntentLexicon {
     // MARK: - Trasporto: successivo
 
     static let nextPhrases: [[String]] = [
-        ["prossimo brano"], ["prossima canzone"], ["brano successivo"],
+        ["brano dopo"], ["canzone dopo"], ["traccia successiva"],
+        ["salta alla traccia successiva"], ["vai al prossimo brano"],
+        ["prossimo pezzo"], ["prossimo brano"], ["prossima canzone"], ["brano successivo"],
         ["canzone successiva"], ["passa al prossimo"], ["passa alla prossima"],
         ["passa al brano successivo"], ["salta al prossimo"], ["salta alla prossima"],
         ["salta brano"], ["salta"], ["avanti"], ["avanti cosi"], ["avanti questo"],
-        ["prossimo"], ["prossima"], ["successivo"], ["successiva"], ["next"],
+        ["prossimo"], ["prossima"], ["successivo"], ["successiva"],
+        ["cambia canzone"], ["cambia brano"], ["next"],
         ["skip"], ["skip this"], ["next track"], ["next song"], ["forward"],
         ["vai avanti"], ["andate avanti"], ["un altro"], ["unaltra"], ["altra"],
         ["ne voglio un altro"], ["sentiamone un altro"]
@@ -138,9 +154,10 @@ enum IntentLexicon {
     // MARK: - Trasporto: precedente
 
     static let previousPhrases: [[String]] = [
-        ["brano precedente"], ["canzone precedente"], ["torna indietro"],
+        ["brano prima"], ["canzone prima"], ["traccia precedente"],
+        ["riproponi il brano precedente"], ["brano precedente"], ["canzone precedente"], ["torna indietro"],
         ["torna al brano precedente"], ["torna alla canzone precedente"],
-        ["torna Indietro"], ["indietro"], ["precedente"], ["previous"],
+        ["torna Indietro"], ["torna alla precedente"], ["indietro"], ["precedente"], ["previous"],
         ["previous track"], ["previous song"], ["back"], ["go back"],
         ["ultimo brano"], ["l ultimo"], ["era bella questa dimmi il precedente"],
         ["ripeti l ultimo"], ["ripeti quest ultima"], ["ripeti"], ["repeat"],
@@ -151,7 +168,8 @@ enum IntentLexicon {
 
     static let quitPhrases: [[String]] = [
         ["esci"], ["esci maestro"], ["maestro esci"], ["chiuditi"], ["chiudi"],
-        ["chiudi tutto"], ["spegniti"], ["spegni maestro"], ["arrenditi"],
+        ["chiudi tutto"], ["chiudi l app"], ["spegni l app"], ["termina maestro"],
+        ["spegniti"], ["spegni maestro"], ["arrenditi"],
         ["disattivati"], ["scollegati"], ["quit"], ["exit"], ["goodbye"],
         ["arrivederci"], ["buonanotte"], ["stop maestro"], ["termina"],
         ["interrompi"], ["interrompi tutto"], ["off"], ["shut down"], ["logout"]
@@ -225,7 +243,7 @@ enum IntentLexicon {
     /// dei comandi tipici (es. «Maestro» invece di «mastro»).
     static let allCommandWords: [String] = {
         var words = Set<String>()
-        words.formUnion(wakeWordAliases.split(separator: " ").map(String.init))
+        words.formUnion(wakeWordAliases.filter { !$0.contains(" ") })
         for group in [playVerbs, politenessPrefixes, favoritesPhrases.filter { !$0.contains("*") },
                       playlistMarkers, pausePhrases, resumePhrases, nextPhrases,
                       previousPhrases, quitPhrases, titleFillerStarts] {

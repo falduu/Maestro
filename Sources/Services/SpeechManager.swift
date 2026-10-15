@@ -15,6 +15,7 @@ final class SpeechManager: ObservableObject {
     enum SpeechError: Error { case noInput }
 
     private static let permsKey = "maestro.permissions.granted"
+    private static let lastPlayCommandKey = "maestro.lastPlayCommand"
 
     @Published private(set) var isListening = false
     @Published private(set) var statusText = "In attesa"
@@ -26,6 +27,12 @@ final class SpeechManager: ObservableObject {
     /// Ultimo comando riproduci eseguito: serve a «riprendi» per ripartire
     /// dallo stesso brano/contesto senza ricominciare una nuova cronologia.
     @Published private(set) var lastPlayCommand: TrackCommand?
+
+    init() {
+        if let data = UserDefaults.standard.data(forKey: Self.lastPlayCommandKey) {
+            lastPlayCommand = try? JSONDecoder().decode(TrackCommand.self, from: data)
+        }
+    }
 
     var onIntent: ((VoiceIntent) -> Void)?
 
@@ -216,10 +223,14 @@ final class SpeechManager: ObservableObject {
         // v0.3: contesto lessicale + brano in riproduzione/ultimo comando,
         // così il riconoscitore "indovina" meglio le parole che userai davvero.
         var contextual: [String] = [AppConfig.wakeWord]
-        contextual += IntentLexicon.allCommandWords
         if let nowPlaying = musicNowPlayingHint { contextual.append(nowPlaying) }
         if let last = lastPlayCommand { contextual.append(last.title) }
-        request.contextualStrings = Array(contextual.prefix(60))
+        contextual += IntentLexicon.allCommandWords
+        var seenContext = Set<String>()
+        request.contextualStrings = contextual
+            .filter { seenContext.insert($0).inserted }
+            .prefix(60)
+            .map { $0 }
 
         if AppConfig.preferOnDeviceRecognition, recognizer.supportsOnDeviceRecognition {
             request.requiresOnDeviceRecognition = true
@@ -343,6 +354,9 @@ final class SpeechManager: ObservableObject {
         // Ricorda l'ultimo «riproduci»: serve per riprendere lo stesso contesto.
         if case .play(let command) = intent {
             lastPlayCommand = command
+            if let data = try? JSONEncoder().encode(command) {
+                UserDefaults.standard.set(data, forKey: Self.lastPlayCommandKey)
+            }
         }
 
         let label = intentDescription(intent)
@@ -439,35 +453,45 @@ final class SpeechManager: ObservableObject {
         return nil
     }
 
+    private static func lexiconTokens(_ phrase: [String]) -> [String] {
+        phrase.flatMap { $0 == "*" ? ["*"] : TextNormalizer.tokenize($0) }
+    }
+
     /// Frasi del lessico pre-ordinate dalla più lunga alla più corta:
     /// così «prossimo brano» vince sempre su «prossimo».
     private static let transportPhrases: [([String], VoiceIntent)] = {
         var all: [([String], VoiceIntent)] = []
-        all += IntentLexicon.pausePhrases.map { ($0, .pause) }
-        all += IntentLexicon.resumePhrases.map { ($0, .resume) }
-        all += IntentLexicon.nextPhrases.map { ($0, .next) }
-        all += IntentLexicon.previousPhrases.map { ($0, .previous) }
-        all += IntentLexicon.quitPhrases.map { ($0, .quit) }
+        all += IntentLexicon.pausePhrases.map { (lexiconTokens($0), .pause) }
+        all += IntentLexicon.resumePhrases.map { (lexiconTokens($0), .resume) }
+        all += IntentLexicon.nextPhrases.map { (lexiconTokens($0), .next) }
+        all += IntentLexicon.previousPhrases.map { (lexiconTokens($0), .previous) }
+        all += IntentLexicon.quitPhrases.map { (lexiconTokens($0), .quit) }
         return all.sorted { $0.0.count > $1.0.count }
     }()
 
     private static let politenessSorted: [[String]] =
-        IntentLexicon.politenessPrefixes.sorted { $0.count > $1.count }
+        IntentLexicon.politenessPrefixes.map(lexiconTokens).sorted { $0.count > $1.count }
 
     private static let playVerbsSorted: [[String]] =
-        IntentLexicon.playVerbs.sorted { $0.count > $1.count }
+        IntentLexicon.playVerbs.map(lexiconTokens).sorted { $0.count > $1.count }
 
     private static let favoritesSuffixesSorted: [[String]] =
-        IntentLexicon.favoritesPhrases.filter { !$0.contains("*") }.sorted { $0.count > $1.count }
+        IntentLexicon.favoritesPhrases
+            .filter { !$0.contains("*") }
+            .map(lexiconTokens)
+            .sorted { $0.count > $1.count }
 
     private static let favoritesPrefixesSorted: [[String]] =
-        IntentLexicon.favoritesPhrases.filter { $0.last == "*" }.sorted { $0.count > $1.count }
+        IntentLexicon.favoritesPhrases
+            .filter { $0.last == "*" }
+            .map { lexiconTokens(Array($0.dropLast())) + ["*"] }
+            .sorted { $0.count > $1.count }
 
     private static let playlistMarkersSorted: [[String]] =
-        IntentLexicon.playlistMarkers.sorted { $0.count > $1.count }
+        IntentLexicon.playlistMarkers.map(lexiconTokens).sorted { $0.count > $1.count }
 
     private static let titleFillersSorted: [[String]] =
-        IntentLexicon.titleFillerStarts.sorted { $0.count > $1.count }
+        IntentLexicon.titleFillerStarts.map(lexiconTokens).sorted { $0.count > $1.count }
 
     private func matchTransportPhrase(at index: Int, tokens: [String]) -> (VoiceIntent, Int)? {
         for (phrase, intent) in Self.transportPhrases {
@@ -579,4 +603,6 @@ final class SpeechManager: ObservableObject {
     private func setError(_ value: String?) {
         if errorMessage != value { errorMessage = value }
     }
+    // MARK: - Riconoscimento vocale
+    static let stablePartialTimeout: TimeInterval = 1.2 
 }
