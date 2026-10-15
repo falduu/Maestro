@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>it</string>
+    <key>CFBundleExecutable</key>
+    <string>Maestro</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.francescofalduto.maestro</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>Maestro</string>
+    <key>CFBundleDisplayName</key>
+    <string>Maestro</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
+
+    <!-- Niente Dock, niente finestra: solo menu bar -->
+    <key>LSUIElement</key>
+    <true/>
+
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Maestro usa il microfono solo per ascoltare i tuoi comandi vocali e controllare la musica.</string>
+
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Maestro usa il riconoscimento vocale per trasformare i tuoi comandi in testo, senza inviarlo altrove quando disponibile on-device.</string>
+
+    <key>NSAppleMusicUsageDescription</key>
+    <string>Maestro accede alla tua libreria musicale per cercare e riprodurre i brani che chiedi a voce.</string>
+
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Maestro controlla l'app Musica per avviare la riproduzione dei brani richiesti.</string>
+
+    <key>NSHumanReadableCopyright</key>
+    <string>© 2026 Francesco Falduto</string>
+</dict>
+</plist>
