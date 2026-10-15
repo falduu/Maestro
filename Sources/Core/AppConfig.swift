@@ -57,4 +57,11 @@ enum AppConfig {
 
     /// Durata cache delle playlist preferiti (evita ricerche ripetute).
     static let favoritesCacheTTL: TimeInterval = 600
+
+    // MARK: - Riconoscimento vocale
+
+    /// Se un parziale resta invariato per questo tempo (secondi), viene
+    /// considerato definitivo: risposta più rapida senza attendere il
+    /// risultato «finale» nativo.
+    static let stablePartialTimeout: TimeInterval = 1.2
 }

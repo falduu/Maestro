@@ -22,12 +22,12 @@ final class MusicAppController: Sendable {
         // (fa a tempo ~50-200ms di compilazione AppleScript per comando).
         let key = ScriptCache.key(query: query, preferred: preferredTitle ?? "", playlist: playlistName ?? "")
 
-        await withCheckedContinuation { continuation in
+        await withCheckedContinuation { (continuation: CheckedContinuation<PlayResult, Never>) in
             DispatchQueue.global(qos: .userInitiated).async {
                 guard let script = ScriptCache.shared.script(for: key, source: {
                     Self.makeScript(query: query, preferredTitle: preferredTitle, playlistName: playlistName)
                 }) else {
-                    continuation.resume(returning: .error("Impossibile preparare lo script AppleScript."))
+                    continuation.resume(returning: PlayResult.error("Impossibile preparare lo script AppleScript."))
                     return
                 }
 
