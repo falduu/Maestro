@@ -76,7 +76,7 @@ xcodegen generate && open Maestro.xcodeproj
 ## Reset permessi
 
 ```sh
-tccutil reset Microphone com.francescofalduto.maestro
-tccutil reset SpeechRecognition com.francescofalduto.maestro
-tccutil reset MediaLibrary com.francescofalduto.maestro
+tccutil reset Microphone com.~~~.maestro
+tccutil reset SpeechRecognition com.~~~.maestro
+tccutil reset MediaLibrary com.~~~.maestro
 ```
